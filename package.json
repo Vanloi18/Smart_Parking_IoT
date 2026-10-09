@@ -1,0 +1,20 @@
+{
+  "name": "smart-parking-iot",
+  "version": "8.2.0",
+  "description": "Smart Parking IoT — Realtime Management Web Dashboard & Mobile PWA",
+  "scripts": {
+    "build": "node build.js",
+    "start": "python run_dashboard.py",
+    "test": "python dashboard/test_telemetry.py"
+  },
+  "keywords": [
+    "smart-parking",
+    "iot",
+    "esp32",
+    "pwa",
+    "realtime",
+    "dashboard"
+  ],
+  "author": "Smart Parking Team",
+  "license": "MIT"
+}

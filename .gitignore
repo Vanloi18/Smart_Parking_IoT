@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv*/
+
+# Database & Uploads
+*.db
+*.sqlite3
+/dashboard/parking.db*
+*.bak*
+/dashboard/backend/uploads/
+uploads/*
+# Báo cáo dọn dữ liệu và OCR có thể chứa thông tin xe thật.
+/dashboard/sample_cleanup_plan_*.json
+/dashboard/sample_cleanup_plan_*.md
+/scripts/ocr_real_*.csv
+/samples/
+
+# Environment Secrets
+.env
+
+# Local backend/WiFi secrets and generated firmware headers
+/backend_config.json
+/src/config/backend_config.h
+/esp32cam_entry/backend_config.h
+/esp32cam_exit/backend_config.h
+
+# Node & Build
+node_modules/
+npm-debug.log
+yarn-error.log
+# Sản phẩm build được sinh lại từ mã nguồn; không đưa khóa ký lên GitHub.
+/dist/
+/build/
+/android/build/
+/android/app/build/
+.gradle/
+.pio/
+*.apk
+*.jks
+*.keystore
+
+# Tài liệu cá nhân không thuộc mã nguồn công khai.
+/Báo cáo NHUNGiot.docx
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

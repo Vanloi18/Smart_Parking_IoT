@@ -1,0 +1,1091 @@
+/* ==========================================================================
+   SMART PARKING IoT — APPLE-LIKE MOBILE WEB STYLESHEET (CSS)
+   Designed for iPhone & Android (375px - 430px) • Touch-Friendly • Light Theme
+   ========================================================================== */
+
+/* 1. MEDIA BREAKPOINT RULES */
+/* Desktop screens (> 768px): Hide Mobile App Shell entirely */
+@media (min-width: 769px) {
+  #mobile-app-shell {
+    display: none !important;
+  }
+}
+
+/* Mobile screens (<= 768px): Hide Desktop Sidebar & Main Wrapper, Show Mobile App Shell */
+@media (max-width: 768px) {
+  .sidebar,
+  .main-wrapper {
+    display: none !important;
+  }
+
+  body {
+    background-color: #f2f2f7;
+    overflow-x: hidden;
+  }
+
+  #app-view {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   2. MOBILE APP SHELL STRUCTURE
+   ========================================================================== */
+.mobile-app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #f2f2f7;
+  color: #1c1c1e;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", Roboto, sans-serif;
+  padding-bottom: calc(75px + env(safe-area-inset-bottom, 20px));
+  position: relative;
+}
+
+/* 3. MOBILE HEADER (APPLE GLASS HEADER) */
+.m-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.12);
+  padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #0071e3 0%, #0051a8 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgba(0, 113, 227, 0.25);
+}
+
+.m-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1c1c1e;
+  line-height: 1.2;
+}
+
+.m-brand-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e5e5ea;
+  color: #3a3a3c;
+  transition: all 0.25s ease;
+}
+
+.m-status-pill.online {
+  background: #e4f7e8;
+  color: #248a3d;
+}
+
+.m-status-pill.offline {
+  background: #fee7e6;
+  color: #d70015;
+}
+
+.m-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.m-status-pill.online .m-pulse-dot {
+  box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+}
+
+.m-btn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: #e5e5ea;
+  color: #1c1c1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.m-btn-icon:active {
+  transform: scale(0.92);
+  background: #d1d1d6;
+}
+
+/* OFFLINE BANNER */
+.m-offline-banner {
+  background: #ff3b30;
+  color: #ffffff;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m-offline-banner.hidden {
+  display: none !important;
+}
+
+.m-btn-retry {
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   4. CONTENT BODY & TABS
+   ========================================================================== */
+.m-content {
+  flex: 1;
+  padding: 14px 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-tab-panel {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.m-tab-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* SECTION TITLE */
+.m-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 4px 8px 4px;
+}
+
+.m-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8e8e93;
+}
+
+.m-section-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0071e3;
+}
+
+/* ==========================================================================
+   5. APPLE CARD SYSTEM
+   ========================================================================== */
+.m-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03), 0 0.5px 1px rgba(0, 0, 0, 0.06);
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+}
+
+/* HERO CAPACITY CARD */
+.m-hero-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f7f9fc 100%);
+  border: 0.5px solid rgba(0, 113, 227, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.m-hero-card::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 113, 227, 0.08) 0%, rgba(0, 113, 227, 0) 70%);
+  pointer-events: none;
+}
+
+.m-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.m-hero-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.m-hero-time {
+  font-size: 11px;
+  color: #8e8e93;
+}
+
+.m-hero-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.m-metric-box {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px 4px;
+  border-radius: 12px;
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.m-metric-val {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.m-metric-val.total { color: #1c1c1e; }
+.m-metric-val.available { color: #34c759; }
+.m-metric-val.occupied { color: #ff9500; }
+
+.m-metric-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #8e8e93;
+  margin-top: 4px;
+}
+
+/* PROGRESS BAR */
+.m-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.m-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 500;
+  color: #636366;
+}
+
+.m-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e5e5ea;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.m-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34c759 0%, #ff9500 100%);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+/* ==========================================================================
+   6. PARKING SLOTS UI (4 SLOTS P1-P4)
+   ========================================================================== */
+.m-slots-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.m-slot-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.06);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.m-slot-card.available {
+  border-color: rgba(52, 199, 89, 0.35);
+  background: linear-gradient(180deg, #ffffff 0%, #f6fdf7 100%);
+}
+
+.m-slot-card.occupied {
+  border-color: rgba(255, 149, 0, 0.4);
+  background: linear-gradient(180deg, #ffffff 0%, #fffcf5 100%);
+}
+
+.m-slot-card.unknown {
+  border-color: rgba(142, 142, 147, 0.3);
+  background: #f9f9f9;
+}
+
+.m-slot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m-slot-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1c1c1e;
+}
+
+.m-slot-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.02em;
+}
+
+.m-slot-badge.available {
+  background: #d4f7dc;
+  color: #1e7e34;
+}
+
+.m-slot-badge.occupied {
+  background: #ffe8cc;
+  color: #b35900;
+}
+
+.m-slot-badge.unknown {
+  background: #e5e5ea;
+  color: #636366;
+}
+
+.m-slot-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.m-slot-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.m-slot-card.available .m-slot-icon-box {
+  background: #e8f9ed;
+  color: #34c759;
+}
+
+.m-slot-card.occupied .m-slot-icon-box {
+  background: #fff2e0;
+  color: #ff9500;
+}
+
+.m-slot-card.unknown .m-slot-icon-box {
+  background: #e5e5ea;
+  color: #8e8e93;
+}
+
+.m-slot-desc {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-slot-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1c1e;
+  line-height: 1.2;
+}
+
+.m-slot-sub {
+  font-size: 11px;
+  color: #8e8e93;
+  margin-top: 2px;
+}
+
+.m-slot-details {
+  border-top: 0.5px solid rgba(0, 0, 0, 0.06);
+  padding-top: 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m-slot-detail-row {
+  display: flex;
+  justify-content: space-between;
+  color: #636366;
+}
+
+.m-slot-detail-val {
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.m-slot-detail-fee {
+  font-weight: 700;
+  color: #0071e3;
+}
+
+/* ==========================================================================
+   7. GATE CONTROLS
+   ========================================================================== */
+.m-gate-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.m-gate-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.m-gate-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.m-gate-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #f2f2f7;
+  color: #0071e3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.m-gate-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-gate-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.m-gate-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m-gate-status.open { color: #34c759; }
+.m-gate-status.closed { color: #8e8e93; }
+
+.m-btn-gate {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.m-btn-gate-primary {
+  background: #0071e3;
+  color: #ffffff;
+}
+
+.m-btn-gate-primary:active {
+  background: #005bb5;
+  transform: scale(0.96);
+}
+
+.m-btn-gate-secondary {
+  background: #e5e5ea;
+  color: #1c1c1e;
+}
+
+.m-btn-gate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   8. SENSORS (TEMP, HUM, GAS)
+   ========================================================================== */
+.m-sensor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.m-sensor-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.m-sensor-icon {
+  font-size: 16px;
+  color: #0071e3;
+  margin-bottom: 2px;
+}
+
+.m-sensor-icon.temp { color: #ff3b30; }
+.m-sensor-icon.hum { color: #0071e3; }
+.m-sensor-icon.gas { color: #ff9500; }
+
+.m-sensor-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+
+.m-sensor-name {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #8e8e93;
+}
+
+.m-sensor-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: #e5e5ea;
+  color: #3a3a3c;
+}
+
+.m-sensor-badge.normal { background: #e4f7e8; color: #248a3d; }
+.m-sensor-badge.warning { background: #fff2cc; color: #b78103; }
+.m-sensor-badge.danger { background: #fee7e6; color: #d70015; }
+
+/* ==========================================================================
+   9. RFID & SESSIONS
+   ========================================================================== */
+.m-rfid-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 8px;
+}
+
+.m-rfid-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0071e3;
+}
+
+/* SESSION LIST ITEM */
+.m-session-item {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.m-session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m-session-plate {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1c1e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m-session-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 12px;
+  color: #636366;
+}
+
+.m-session-meta-item span {
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.m-session-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.06);
+  padding-top: 8px;
+  font-size: 12px;
+}
+
+.m-session-fee {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0071e3;
+}
+
+/* FILTER TABS */
+.m-pill-tabs {
+  display: flex;
+  background: #e5e5ea;
+  border-radius: 10px;
+  padding: 2px;
+  margin-bottom: 14px;
+}
+
+.m-pill-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #636366;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.m-pill-btn.active {
+  background: #ffffff;
+  color: #1c1c1e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   10. PAYMENT VIEW
+   ========================================================================== */
+.m-pricing-banner {
+  background: linear-gradient(135deg, #0071e3 0%, #0051a8 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 16px rgba(0, 113, 227, 0.2);
+}
+
+.m-pricing-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.m-pricing-rate {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 4px 0 2px 0;
+  letter-spacing: -0.02em;
+}
+
+.m-pricing-sub {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   11. CAMERA FRAMES
+   ========================================================================== */
+.m-cam-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 14px;
+}
+
+.m-cam-header {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.m-cam-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #ebebef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8e8e93;
+  position: relative;
+  overflow: hidden;
+}
+
+.m-cam-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.m-cam-offline-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8e8e93;
+}
+
+/* ==========================================================================
+   12. SYSTEM STATUS LIST
+   ========================================================================== */
+.m-sys-list {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.m-sys-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.04);
+}
+
+.m-sys-row:last-child {
+  border-bottom: none;
+}
+
+.m-sys-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m-sys-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f2f2f7;
+  color: #0071e3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.m-sys-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+
+.m-sys-sub {
+  font-size: 11px;
+  color: #8e8e93;
+}
+
+/* ==========================================================================
+   13. BOTTOM TABBAR (APPLE GLASS TABBAR)
+   ========================================================================== */
+.m-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(58px + env(safe-area-inset-bottom, 12px));
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-top: 0.5px solid rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 999;
+}
+
+.m-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #8e8e93;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m-tab-item i {
+  font-size: 18px;
+  transition: transform 0.15s ease;
+}
+
+.m-tab-item:active i {
+  transform: scale(0.88);
+}
+
+.m-tab-item.active {
+  color: #0071e3;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   14. TOAST NOTIFICATIONS & CONFIRM DIALOG
+   ========================================================================== */
+.m-toast-container {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.m-toast {
+  background: rgba(28, 28, 30, 0.94);
+  backdrop-filter: blur(20px);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: toastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.m-toast.success i { color: #34c759; }
+.m-toast.error i { color: #ff3b30; }
+.m-toast.info i { color: #0071e3; }
+
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* MODAL DIALOG (APPLE ACTION SHEET / MODAL) */
+.m-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.m-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.m-modal-sheet {
+  background: #ffffff;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 12px)) 20px;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.m-modal-backdrop.active .m-modal-sheet {
+  transform: translateY(0);
+}
+
+.m-modal-pill {
+  width: 36px;
+  height: 4px;
+  background: #d1d1d6;
+  border-radius: 100px;
+  margin: 0 auto 16px auto;
+}
+
+.m-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1c1e;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.m-modal-desc {
+  font-size: 13px;
+  color: #8e8e93;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.m-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m-btn-modal-confirm {
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  border: none;
+  background: #0071e3;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.m-btn-modal-cancel {
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  border: none;
+  background: #f2f2f7;
+  color: #1c1c1e;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* SKELETON LOADER */
+.m-skeleton {
+  background: linear-gradient(90deg, #ececf0 25%, #f6f6f9 50%, #ececf0 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

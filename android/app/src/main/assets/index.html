@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking IoT — Hệ Thống Quản Lý Bãi Đỗ Xe Thông Minh</title>
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Smart Parking">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="icons/favicon.png">
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+
+    <!-- ==================================================================== -->
+    <!-- 1. LOGIN VIEW (APPLE-LIKE AUTHENTICATION MODAL)                       -->
+    <!-- ==================================================================== -->
+    <div id="login-view" class="login-wrapper">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="brand-logo"><i class="fa-solid fa-square-parking"></i></div>
+                <h2>Smart Parking IoT</h2>
+                <p>Hệ thống Quản lý Bãi đỗ xe Thông minh</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLoginSubmit(event)">
+                <div id="login-error-alert" class="alert-box alert-error hidden">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="login-error-msg">Tên đăng nhập hoặc mật khẩu không chính xác.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-username">Tên đăng nhập</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="login-username" placeholder="Nhập tài khoản (admin)" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Nhập mật khẩu (admin123)" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div class="login-helper">
+                    <span class="text-hint"><i class="fa-solid fa-shield-halved"></i> Mặc định: <code>admin</code> / <code>admin123</code></span>
+                </div>
+
+                <button type="submit" class="btn-apple-primary btn-block" id="btn-login-submit">
+                    <span>Đăng nhập</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+                <div style="text-align: center; margin-top: 12px;">
+                    <button type="button" class="btn-apple-secondary btn-sm" onclick="openApiConfigModal()" style="font-size: 11px;">
+                        <i class="fa-solid fa-network-wired"></i> Cài đặt Server Backend (Mặc định: localhost:5000)
+                    </button>
+                </div>
+            </form>
+
+            <div class="login-footer">
+                <span>ESP32 DevKit V1 • 2x ESP32-CAM • Non-blocking FSM</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 2. MAIN APPLICATION SHELL (SIDEBAR + HEADER + VIEWS)                  -->
+    <!-- ==================================================================== -->
+    <div id="app-view" class="app-layout hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><i class="fa-solid fa-square-parking"></i></div>
+                <div class="sidebar-title">
+                    <h2>Smart Parking</h2>
+                    <span class="sub-badge">IoT Core V8.1</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#parking" class="nav-item" data-view="parking">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Parking</span>
+                </a>
+                <a href="#vehicles" class="nav-item" data-view="vehicles">
+                    <i class="fa-solid fa-car-side"></i>
+                    <span>Vehicles</span>
+                </a>
+                <a href="#payments" class="nav-item" data-view="payments">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Payments</span>
+                </a>
+                <a href="#history" class="nav-item" data-view="history">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History</span>
+                </a>
+                <a href="#sensors" class="nav-item" data-view="sensors">
+                    <i class="fa-solid fa-microchip"></i>
+                    <span>Sensors</span>
+                </a>
+                <a href="#settings" class="nav-item" data-view="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="device-status-box">
+                    <div class="device-row">
+                        <span class="dot-indicator" id="dot-main-esp"></span>
+                        <span class="device-name">MAIN ESP32</span>
+                        <span class="device-state" id="text-main-esp">OFFLINE</span>
+                    </div>
+                    <div class="device-row">
+                        <span class="dot-indicator" id="dot-entry-cam"></span>
+                        <span class="device-name">ENTRY CAM</span>
+                        <span class="device-state" id="text-entry-cam">OFFLINE</span>
+                    </div>
+                    <div class="device-row">
+                        <span class="dot-indicator" id="dot-exit-cam"></span>
+                        <span class="device-name">EXIT CAM</span>
+                        <span class="device-state" id="text-exit-cam">OFFLINE</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-wrapper">
+
+            <!-- TOP NAVBAR -->
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="page-title-box">
+                        <h1 id="page-title">Dashboard</h1>
+                        <span id="page-subtitle">Tổng quan bãi đỗ xe thời gian thực</span>
+                    </div>
+                </div>
+
+                <div class="header-center">
+                    <div class="search-bar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="global-search" placeholder="Tìm biển số, mã thẻ RFID, vị trí..." oninput="handleGlobalSearch(this.value)">
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="status-pills">
+                        <div class="pill" id="pill-sync-time" title="Lần đồng bộ Telemetry cuối">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                            <span id="header-sync-time">--:--:--</span>
+                        </div>
+                        <div class="time-clock" id="header-clock">00:00:00</div>
+                    </div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="user-menu">
+                        <div class="user-avatar" id="user-avatar-initials">AD</div>
+                        <div class="user-info">
+                            <span class="user-name" id="user-display-name">Admin</span>
+                            <span class="user-role" id="user-display-role">ADMIN</span>
+                        </div>
+                        <button class="btn-icon btn-logout" onclick="handleLogout()" title="Đăng xuất">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DYNAMIC VIEW PAGES CONTAINER -->
+            <main class="content-body">
+
+                <!-- ============================================================ -->
+                <!-- VIEW 1: DASHBOARD                                            -->
+                <!-- ============================================================ -->
+                <section id="view-dashboard" class="view-pane active">
+                    <!-- TOP KPI STATS CARDS -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-blue"><i class="fa-solid fa-layer-group"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">TOTAL SLOTS</span>
+                                <span class="kpi-value" id="kpi-total-slots">4</span>
+                                <span class="kpi-sub">Sức chứa cố định</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">AVAILABLE</span>
+                                <span class="kpi-value val-green" id="kpi-available-slots">--</span>
+                                <span class="kpi-sub status-chip chip-green" id="kpi-avail-chip">SẴN SÀNG</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-orange"><i class="fa-solid fa-square-parking"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">OCCUPIED</span>
+                                <span class="kpi-value val-orange" id="kpi-occupied-slots">--</span>
+                                <span class="kpi-sub" id="kpi-rate-sub">Tỉ lệ chiếm dụng: --%</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card" id="card-kpi-gas">
+                            <div class="kpi-icon icon-purple"><i class="fa-solid fa-wind"></i></div>
+                            <div class="kpi-content">
+                                <span class="kpi-label">AIR QUALITY (MQ-7)</span>
+                                <div class="kpi-val-row">
+                                    <span class="kpi-value" id="kpi-gas-level">NORMAL</span>
+                                    <span class="kpi-adc" id="kpi-gas-adc">(ADC: ---)</span>
+                                </div>
+                                <span class="kpi-sub" id="kpi-gas-sub">Không khí an toàn</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 2: PARKING SLOT MAP + BARRIER GATES -->
+                    <div class="dash-main-grid">
+                        
+                        <!-- PARKING SLOT MAP (4 SLOTS: P1, P2 / P3, P4) -->
+                        <div class="apple-card map-card">
+                            <div class="card-head">
+                                <div>
+                                    <h3><i class="fa-solid fa-map-pin"></i> PARKING SLOT MAP</h3>
+                                    <p class="card-subtitle">4 vị trí cảm biến thực tế (P1, P2, P3, P4)</p>
+                                </div>
+                                <div class="map-legend">
+                                    <span class="legend-item"><span class="legend-dot dot-avail"></span> AVAILABLE</span>
+                                    <span class="legend-item"><span class="legend-dot dot-occ"></span> OCCUPIED</span>
+                                </div>
+                            </div>
+
+                            <div class="parking-lot-layout">
+                                <div class="lane-indicator entry-lane">
+                                    <span>LÀN XE VÀO ➔</span>
+                                </div>
+
+                                <!-- 4 SLOTS GRID: P1 P2 / P3 P4 -->
+                                <div class="slots-2x2-grid">
+                                    <!-- SLOT P1 -->
+                                    <div class="slot-box" id="slot-card-P1">
+                                        <div class="slot-badge-bar">
+                                            <span class="slot-name">P1</span>
+                                            <span class="slot-status-pill pill-avail" id="slot-pill-P1">AVAILABLE</span>
+                                        </div>
+                                        <div class="slot-center">
+                                            <div class="car-visual hidden" id="car-visual-P1">
+                                                <i class="fa-solid fa-car"></i>
+                                                <span class="plate-tag" id="plate-tag-P1">ĐANG ĐỖ</span>
+                                            </div>
+                                            <div class="empty-visual" id="empty-visual-P1">
+                                                <i class="fa-regular fa-circle-check"></i>
+                                                <span>TRỐNG</span>
+                                            </div>
+                                        </div>
+                                        <div class="slot-foot">IR Sensor: GPIO 13</div>
+                                    </div>
+
+                                    <!-- SLOT P2 -->
+                                    <div class="slot-box" id="slot-card-P2">
+                                        <div class="slot-badge-bar">
+                                            <span class="slot-name">P2</span>
+                                            <span class="slot-status-pill pill-avail" id="slot-pill-P2">AVAILABLE</span>
+                                        </div>
+                                        <div class="slot-center">
+                                            <div class="car-visual hidden" id="car-visual-P2">
+                                                <i class="fa-solid fa-car"></i>
+                                                <span class="plate-tag" id="plate-tag-P2">ĐANG ĐỖ</span>
+                                            </div>
+                                            <div class="empty-visual" id="empty-visual-P2">
+                                                <i class="fa-regular fa-circle-check"></i>
+                                                <span>TRỐNG</span>
+                                            </div>
+                                        </div>
+                                        <div class="slot-foot">IR Sensor: GPIO 14</div>
+                                    </div>
+
+                                    <!-- SLOT P3 -->
+                                    <div class="slot-box" id="slot-card-P3">
+                                        <div class="slot-badge-bar">
+                                            <span class="slot-name">P3</span>
+                                            <span class="slot-status-pill pill-avail" id="slot-pill-P3">AVAILABLE</span>
+                                        </div>
+                                        <div class="slot-center">
+                                            <div class="car-visual hidden" id="car-visual-P3">
+                                                <i class="fa-solid fa-car"></i>
+                                                <span class="plate-tag" id="plate-tag-P3">ĐANG ĐỖ</span>
+                                            </div>
+                                            <div class="empty-visual" id="empty-visual-P3">
+                                                <i class="fa-regular fa-circle-check"></i>
+                                                <span>TRỐNG</span>
+                                            </div>
+                                        </div>
+                                        <div class="slot-foot">IR Sensor: GPIO 16</div>
+                                    </div>
+
+                                    <!-- SLOT P4 -->
+                                    <div class="slot-box" id="slot-card-P4">
+                                        <div class="slot-badge-bar">
+                                            <span class="slot-name">P4</span>
+                                            <span class="slot-status-pill pill-avail" id="slot-pill-P4">AVAILABLE</span>
+                                        </div>
+                                        <div class="slot-center">
+                                            <div class="car-visual hidden" id="car-visual-P4">
+                                                <i class="fa-solid fa-car"></i>
+                                                <span class="plate-tag" id="plate-tag-P4">ĐANG ĐỖ</span>
+                                            </div>
+                                            <div class="empty-visual" id="empty-visual-P4">
+                                                <i class="fa-regular fa-circle-check"></i>
+                                                <span>TRỐNG</span>
+                                            </div>
+                                        </div>
+                                        <div class="slot-foot">IR Sensor: GPIO 35</div>
+                                    </div>
+                                </div>
+
+                                <div class="lane-indicator exit-lane">
+                                    <span>➔ LÀN XE RA</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GATES & BARRIER CONTROL -->
+                        <div class="apple-card gates-card">
+                            <div class="card-head">
+                                <h3><i class="fa-solid fa-shield-halved"></i> ENTRY / EXIT BARRIERS</h3>
+                            </div>
+
+                            <div class="gates-stack">
+                                <!-- ENTRY BARRIER -->
+                                <div class="gate-tile">
+                                    <div class="gate-header-row">
+                                        <span class="gate-name"><i class="fa-solid fa-arrow-right-to-bracket"></i> CỔNG VÀO (ENTRY)</span>
+                                        <span class="status-chip chip-closed" id="dash-barrier-entry-tag">CLOSED</span>
+                                    </div>
+                                    <div class="gate-meta-row">
+                                        <span>RFID Quẹt Thẻ:</span>
+                                        <strong id="dash-rfid-entry-uid">Chưa có thẻ</strong>
+                                    </div>
+                                    <div class="gate-btn-group">
+                                        <button class="btn-apple-secondary" onclick="controlBarrierRemote('ENTRY', 'OPEN')">
+                                            <i class="fa-solid fa-lock-open"></i> Mở Barrier
+                                        </button>
+                                        <button class="btn-apple-secondary" onclick="controlBarrierRemote('ENTRY', 'CLOSE')">
+                                            <i class="fa-solid fa-lock"></i> Đóng Barrier
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- EXIT BARRIER -->
+                                <div class="gate-tile">
+                                    <div class="gate-header-row">
+                                        <span class="gate-name"><i class="fa-solid fa-arrow-right-from-bracket"></i> CỔNG RA (EXIT)</span>
+                                        <span class="status-chip chip-closed" id="dash-barrier-exit-tag">CLOSED</span>
+                                    </div>
+                                    <div class="gate-meta-row">
+                                        <span>RFID Quẹt Thẻ:</span>
+                                        <strong id="dash-rfid-exit-uid">Chưa có thẻ</strong>
+                                    </div>
+                                    <div class="gate-btn-group">
+                                        <button class="btn-apple-secondary" onclick="controlBarrierRemote('EXIT', 'OPEN')">
+                                            <i class="fa-solid fa-lock-open"></i> Mở Barrier
+                                        </button>
+                                        <button class="btn-apple-secondary" onclick="controlBarrierRemote('EXIT', 'CLOSE')">
+                                            <i class="fa-solid fa-lock"></i> Đóng Barrier
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 3: DUAL ESP32-CAM ANPR MONITOR -->
+                    <div class="dash-camera-section">
+                        <div class="apple-card">
+                            <div class="card-head">
+                                <div>
+                                    <h3><i class="fa-solid fa-video"></i> CAMERA & ANPR RECOGNITION</h3>
+                                    <p class="card-subtitle">2 ESP32-CAM Chuyên Dụng (AI-Thinker OV2640)</p>
+                                </div>
+                                <div class="cam-pills-bar">
+                                    <span class="status-chip chip-offline" id="chip-cam-entry">ENTRY: OFFLINE</span>
+                                    <span class="status-chip chip-offline" id="chip-cam-exit">EXIT: OFFLINE</span>
+                                </div>
+                            </div>
+
+                            <div class="camera-pair-grid">
+                                <!-- ENTRY CAM -->
+                                <div class="cam-box">
+                                    <div class="cam-box-top">
+                                        <h4><i class="fa-solid fa-arrow-right-to-bracket"></i> ENTRY CAMERA (CỔNG VÀO)</h4>
+                                        <span class="status-indicator-text" id="cam-entry-status-text">OFFLINE</span>
+                                    </div>
+                                    <div class="cam-feed-frame" id="feed-frame-entry">
+                                        <div class="feed-placeholder">
+                                            <i class="fa-solid fa-camera"></i>
+                                            <span>CHỜ KHUNG HÌNH ENTRY</span>
+                                        </div>
+                                    </div>
+                                    <div class="cam-anpr-info">
+                                        <div class="anpr-row">
+                                            <span class="anpr-label">BIỂN SỐ NHẬN DIỆN:</span>
+                                            <strong class="anpr-plate" id="dash-cam-entry-plate">--</strong>
+                                        </div>
+                                        <div class="anpr-meta">
+                                            <span>IP: <b id="dash-cam-entry-ip">N/A</b></span>
+                                            <span>Frame: <b id="dash-cam-entry-time">--:--:--</b></span>
+                                        </div>
+                                    </div>
+                                    <div class="cam-box-actions" style="margin-top: 10px;">
+                                        <button class="btn-apple-secondary btn-sm" id="btn-trigger-cam-entry" onclick="triggerCameraCapture('ENTRY')" style="width: 100%;">
+                                            <i class="fa-solid fa-camera"></i> Chụp ảnh Cổng vào
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- EXIT CAM -->
+                                <div class="cam-box">
+                                    <div class="cam-box-top">
+                                        <h4><i class="fa-solid fa-arrow-right-from-bracket"></i> EXIT CAMERA (CỔNG RA)</h4>
+                                        <span class="status-indicator-text" id="cam-exit-status-text">OFFLINE</span>
+                                    </div>
+                                    <div class="cam-feed-frame" id="feed-frame-exit">
+                                        <div class="feed-placeholder">
+                                            <i class="fa-solid fa-camera"></i>
+                                            <span>CHỜ KHUNG HÌNH EXIT</span>
+                                        </div>
+                                    </div>
+                                    <div class="cam-anpr-info">
+                                        <div class="anpr-row">
+                                            <span class="anpr-label">BIỂN SỐ NHẬN DIỆN:</span>
+                                            <strong class="anpr-plate" id="dash-cam-exit-plate">--</strong>
+                                        </div>
+                                        <div class="anpr-meta">
+                                            <span>IP: <b id="dash-cam-exit-ip">N/A</b></span>
+                                            <span>Frame: <b id="dash-cam-exit-time">--:--:--</b></span>
+                                        </div>
+                                    </div>
+                                    <div class="cam-box-actions" style="margin-top: 10px;">
+                                        <button class="btn-apple-secondary btn-sm" id="btn-trigger-cam-exit" onclick="triggerCameraCapture('EXIT')" style="width: 100%;">
+                                            <i class="fa-solid fa-camera"></i> Chụp ảnh Cổng ra
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 4: RECENT ACTIVITY & TRANSACTIONS -->
+                    <div class="apple-card">
+                        <div class="card-head">
+                            <h3><i class="fa-solid fa-list-check"></i> HOẠT ĐỘNG GẦN ĐÂY</h3>
+                            <button class="btn-apple-secondary btn-sm" onclick="fetchFullStatus()">
+                                <i class="fa-solid fa-rotate"></i> Làm mới
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>MÃ THẺ (RFID)</th>
+                                        <th>BIỂN SỐ (ANPR)</th>
+                                        <th>GIỜ VÀO</th>
+                                        <th>GIỜ RA</th>
+                                        <th>THỜI GIAN</th>
+                                        <th>PHÍ (VNĐ)</th>
+                                        <th>TRẠNG THÁI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-recent-table-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">Đang tải dữ liệu hoạt động...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 2: PARKING (CHI TIẾT Ô ĐỖ & MẶT BẰNG)                   -->
+                <!-- ============================================================ -->
+                <section id="view-parking" class="view-pane">
+                    <div class="apple-card">
+                        <div class="card-head">
+                            <div>
+                                <h3>MẶT BẰNG BÃI ĐỖ XE CHI TIẾT</h3>
+                                <p class="card-subtitle">Trạng thái thời gian thực của 4 ô đỗ P1 - P4</p>
+                            </div>
+                            <button class="btn-apple-secondary btn-sm" onclick="loadParkingView()">
+                                <i class="fa-solid fa-rotate"></i> Cập nhật
+                            </button>
+                        </div>
+                        <div class="parking-detail-grid" id="parking-detail-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 3: VEHICLES (DANH SÁCH XE RA VÀO)                       -->
+                <!-- ============================================================ -->
+                <section id="view-vehicles" class="view-pane">
+                    <div class="apple-card">
+                        <div class="card-head">
+                            <div>
+                                <h3>QUẢN LÝ PHƯƠNG TIỆN</h3>
+                                <p class="card-subtitle">Biển số ANPR, mã thẻ RFID, vị trí ô đỗ hiện tại</p>
+                            </div>
+                            <div class="table-search-group">
+                                <input type="text" id="vehicle-filter-input" placeholder="Lọc theo biển số/RFID..." oninput="loadVehiclesView(this.value)">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>BIỂN SỐ</th>
+                                        <th>MÃ THẺ RFID</th>
+                                        <th>Ô ĐỖ HIỆN TẠI</th>
+                                        <th>TRẠNG THÁI</th>
+                                        <th>NGÀY ĐĂNG KÝ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vehicles-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Đang tải danh sách phương tiện...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 4: PAYMENTS (LỊCH SỬ THU PHÍ & THANH TOÁN)              -->
+                <!-- ============================================================ -->
+                <section id="view-payments" class="view-pane">
+                    <div class="apple-card">
+                        <div class="card-head">
+                            <div>
+                                <h3>LỊCH SỬ THU PHÍ & THANH TOÁN</h3>
+                                <p class="card-subtitle">Bảng kê chi tiết phí đỗ xe theo phiên</p>
+                            </div>
+                            <button class="btn-apple-secondary btn-sm" onclick="loadPaymentsView()">
+                                <i class="fa-solid fa-rotate"></i> Cập nhật
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="apple-table">
+                                <thead>
+                                    <tr>
+                                        <th>MÃ GD</th>
+                                        <th>BIỂN SỐ</th>
+                                        <th>THỜI GIAN ĐỖ</th>
+                                        <th>SỐ TIỀN</th>
+                                        <th>PHƯƠNG THỨC</th>
+                                        <th>TRẠNG THÁI</th>
+                                        <th>THỜI ĐIỂM THANH TOÁN</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payments-table-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Đang tải lịch sử thanh toán...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 5: HISTORY (AUDIT LOG LỊCH SỬ TOÀN HỆ THỐNG)            -->
+                <!-- ============================================================ -->
+                <section id="view-history" class="view-pane">
+                    <div class="apple-card">
+                        <div class="card-head">
+                            <div>
+                                <h3>NHẬT KÝ SỰ KIỆN HỆ THỐNG (AUDIT LOG)</h3>
+                                <p class="card-subtitle">Toàn bộ sự kiện xe vào, xe ra, camera, barrier và cảnh báo</p>
+                            </div>
+                            <button class="btn-apple-secondary btn-sm" onclick="loadHistoryView()">
+                                <i class="fa-solid fa-rotate"></i> Tải lại
+                            </button>
+                        </div>
+
+                        <div class="history-timeline" id="history-timeline-container">
+                            <div class="text-center text-muted">Đang tải dữ liệu lịch sử...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 6: SENSORS (THÔNG SỐ CẢM BIẾN CHI TIẾT)                 -->
+                <!-- ============================================================ -->
+                <section id="view-sensors" class="view-pane">
+                    <div class="sensors-grid-layout">
+                        <!-- MÔI TRƯỜNG -->
+                        <div class="apple-card">
+                            <div class="card-head">
+                                <h3><i class="fa-solid fa-temperature-half"></i> KHÍ HẬU & MÔI TRƯỜNG (DHT11)</h3>
+                            </div>
+                            <div class="sensor-readout-row">
+                                <div class="sensor-metric-box">
+                                    <span class="s-label">Nhiệt độ</span>
+                                    <div class="s-val-group">
+                                        <span class="s-val" id="sensor-val-temp">--.-</span>
+                                        <span class="s-unit">°C</span>
+                                    </div>
+                                    <div class="progress-apple">
+                                        <div class="progress-bar-fill fill-temp" id="sensor-bar-temp" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="sensor-metric-box">
+                                    <span class="s-label">Độ ẩm</span>
+                                    <div class="s-val-group">
+                                        <span class="s-val" id="sensor-val-hum">--.-</span>
+                                        <span class="s-unit">%RH</span>
+                                    </div>
+                                    <div class="progress-apple">
+                                        <div class="progress-bar-fill fill-hum" id="sensor-bar-hum" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KHÍ CO MQ-7 -->
+                        <div class="apple-card">
+                            <div class="card-head">
+                                <h3><i class="fa-solid fa-smog"></i> CẢM BIẾN KHÍ CO (MQ-7 ADC1)</h3>
+                            </div>
+                            <div class="sensor-readout-row">
+                                <div class="sensor-metric-box">
+                                    <span class="s-label">Mức độ khí</span>
+                                    <div class="s-val-group">
+                                        <span class="s-val" id="sensor-gas-status">NORMAL</span>
+                                    </div>
+                                    <span class="s-sub" id="sensor-gas-sub">An toàn không khí</span>
+                                </div>
+                                <div class="sensor-metric-box">
+                                    <span class="s-label">Giá trị ADC & Điện áp (Cầu 10k:10k)</span>
+                                    <div class="s-val-group">
+                                        <span class="s-val" id="sensor-gas-adc">0</span>
+                                        <span class="s-unit">/ 4095</span>
+                                    </div>
+                                    <span class="s-sub" id="sensor-gas-volt">V_ADC: ~0.00V | V_AO: ~0.00V</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6 IR SENSORS + 2 RC522 RFID STATUS -->
+                    <div class="apple-card" style="margin-top: 20px;">
+                        <div class="card-head">
+                            <h3><i class="fa-solid fa-microchip"></i> TRẠNG THÁI 6 CẢM BIẾN HỒNG NGOẠI & 2 RFID RC522</h3>
+                            <button class="btn-apple-secondary btn-sm" onclick="loadSensorsView()">
+                                <i class="fa-solid fa-rotate"></i> Cập nhật
+                            </button>
+                        </div>
+                        <div class="hardware-pins-grid" id="sensors-hardware-grid">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================================ -->
+                <!-- VIEW 7: SETTINGS (CẤU HÌNH HỆ THỐNG & WI-FI GUIDE)           -->
+                <!-- ============================================================ -->
+                <section id="view-settings" class="view-pane">
+                    <div class="settings-grid">
+                        
+                        <!-- WI-FI & NETWORK INSTRUCTIONS CARD -->
+                        <div class="apple-card">
+                            <div class="card-head">
+                                <h3><i class="fa-solid fa-network-wired"></i> CẤU HÌNH MẠNG & WI-FI LAN</h3>
+                            </div>
+                            <div class="settings-content">
+                                <p class="text-secondary">
+                                    Để ESP32 DevKit và 2x ESP32-CAM kết nối được tới Backend trên máy tính, tất cả các thiết bị phải nằm trong cùng mạng Wi-Fi LAN:
+                                </p>
+
+                                <div class="code-box-apple">
+                                    <div class="code-title">Vị trí cấu hình duy nhất trên ESP32 DevKit:</div>
+                                    <code>src/config/config.h</code>
+                                    <pre>
+inline const char* WIFI_SSID     = "TÊN_WIFI_CỦA_BẠN";
+inline const char* WIFI_PASSWORD = "MẬT_KHẨU_WIFI";
+inline const char* SERVER_HOST   = "<span id="settings-detected-ip">192.168.0.103</span>";
+constexpr uint16_t SERVER_PORT   = 5000;</pre>
+                                </div>
+
+                                <div class="notice-box-apple">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <div>
+                                        <strong>Lưu ý Windows Firewall:</strong> Nếu ESP32 không kết nối được tới server, mở Windows Defender Firewall và cho phép cổng <b>5000 (TCP)</b> hoặc tạm thời tắt Firewall mạng Private.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TEST & SIMULATION TOOLKIT CARD -->
+                        <div class="apple-card">
+                            <div class="card-head">
+                                <h3><i class="fa-solid fa-vial"></i> CÔNG CỤ TEST KIỂM THỬ DỮ LIỆU</h3>
+                                <span class="status-chip chip-neutral">Kỹ sư kiểm thử</span>
+                            </div>
+                            <div class="settings-content">
+                                <p class="text-secondary">Gửi gói tin Telemetry hoặc mô phỏng quẹt thẻ để kiểm thử đường truyền End-to-End:</p>
+                                
+                                <div class="toolkit-sim-form">
+                                    <div class="sim-row">
+                                        <label>Ô đỗ P1-P4:</label>
+                                        <div class="sim-cb-group">
+                                            <label><input type="checkbox" id="sim-cb-p1"> P1</label>
+                                            <label><input type="checkbox" id="sim-cb-p2"> P2</label>
+                                            <label><input type="checkbox" id="sim-cb-p3"> P3</label>
+                                            <label><input type="checkbox" id="sim-cb-p4"> P4</label>
+                                        </div>
+                                    </div>
+                                    <div class="sim-row">
+                                        <label>Khí CO MQ-7:</label>
+                                        <select id="sim-select-gas" class="apple-select">
+                                            <option value="420|NORMAL">Bình thường (420 ADC)</option>
+                                            <option value="2300|WARNING">Cảnh báo (2300 ADC)</option>
+                                            <option value="3400|DANGER">Nguy hiểm (3400 ADC)</option>
+                                        </select>
+                                    </div>
+                                    <div class="sim-btn-row">
+                                        <button class="btn-apple-primary btn-sm" onclick="sendSimulatedHeartbeat()">
+                                            <i class="fa-solid fa-paper-plane"></i> Gửi Telemetry Test
+                                        </button>
+                                        <button class="btn-apple-secondary btn-sm" onclick="simulateCardScanAction('ENTRY')">
+                                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Thẻ Vào (Entry)
+                                        </button>
+                                        <button class="btn-apple-secondary btn-sm" onclick="simulateCardScanAction('EXIT')">
+                                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Thẻ Ra (Exit)
+                                        </button>
+                                    </div>
+                                    <div class="sim-log-apple" id="sim-action-log">Sẵn sàng nhận lệnh test...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- 3. MOBILE WEB APP SHELL (RESPONSIVE FOR <= 768px / SMARTPHONES) -->
+        <!-- ================================================================ -->
+        <div id="mobile-app-shell" class="mobile-app-shell">
+
+            <!-- MOBILE HEADER (APPLE GLASS HEADER) -->
+            <header class="m-header">
+                <div class="m-header-left">
+                    <div class="m-logo-icon">
+                        <i class="fa-solid fa-square-parking"></i>
+                    </div>
+                    <div class="m-logo-text">
+                        <span class="m-brand-name">Smart Parking</span>
+                        <span class="m-brand-sub">
+                            <i class="fa-solid fa-clock"></i> <span id="m-header-time-text">--:--:--</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="m-header-right">
+                    <div id="m-header-status-pill" class="m-status-pill offline">
+                        <span class="m-pulse-dot"></span>
+                        <span id="m-header-status-text">OFFLINE</span>
+                    </div>
+                    <button class="m-btn-icon" title="Cài đặt kết nối Backend" onclick="openApiConfigModal()">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </button>
+                    <button class="m-btn-icon" title="Làm mới dữ liệu" onclick="fetchFullStatus()">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                    <button class="m-btn-icon" title="Đăng xuất" onclick="handleLogout()">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- OFFLINE BANNER -->
+            <div id="m-offline-banner" class="m-offline-banner hidden">
+                <div><i class="fa-solid fa-wifi"></i> Mất kết nối mạng! Vui lòng kiểm tra Internet.</div>
+                <button class="m-btn-retry" onclick="fetchFullStatus()">Thử lại</button>
+            </div>
+
+            <!-- MOBILE CONTENT SCROLLABLE AREA -->
+            <main class="m-content">
+
+                <!-- ==================== TAB 1: HOME ==================== -->
+                <div id="m-tab-home" class="m-tab-panel active">
+                    
+                    <!-- HERO CAPACITY CARD -->
+                    <div class="m-card m-hero-card">
+                        <div class="m-hero-header">
+                            <span class="m-hero-title">Sức Chứa Bãi Đỗ Xe</span>
+                            <span class="m-hero-time">Realtime IoT</span>
+                        </div>
+                        <div class="m-hero-metrics">
+                            <div class="m-metric-box">
+                                <div class="m-metric-val total" id="m-hero-total">4</div>
+                                <div class="m-metric-label">Tổng chỗ</div>
+                            </div>
+                            <div class="m-metric-box">
+                                <div class="m-metric-val available" id="m-hero-free">--</div>
+                                <div class="m-metric-label">Chỗ trống</div>
+                            </div>
+                            <div class="m-metric-box">
+                                <div class="m-metric-val occupied" id="m-hero-occ">--</div>
+                                <div class="m-metric-label">Đang đỗ</div>
+                            </div>
+                        </div>
+                        <div class="m-progress-container">
+                            <div class="m-progress-meta">
+                                <span>Tỉ lệ sử dụng bãi xe</span>
+                                <span id="m-hero-progress-pct">0%</span>
+                            </div>
+                            <div class="m-progress-track">
+                                <div class="m-progress-fill" id="m-hero-progress-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QUICK GATE ACTION CARD -->
+                    <div class="m-section-header">
+                        <span class="m-section-title">Điều Khiển Cổng Barrier</span>
+                        <span class="m-section-badge">Servo SG90</span>
+                    </div>
+                    <div class="m-card">
+                        <div class="m-gate-container">
+                            <!-- ENTRY GATE -->
+                            <div class="m-gate-card">
+                                <div class="m-gate-left">
+                                    <div class="m-gate-icon">
+                                        <i class="fa-solid fa-door-open"></i>
+                                    </div>
+                                    <div class="m-gate-info">
+                                        <div class="m-gate-name">Cổng Vào (Entry)</div>
+                                        <div class="m-gate-status closed" id="m-gate-entry-status">
+                                            <i class="fa-solid fa-lock"></i> ĐANG ĐÓNG
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="m-btn-gate m-btn-gate-primary" id="m-btn-open-entry" onclick="handleMobileGateAction('ENTRY')">
+                                    <i class="fa-solid fa-arrow-up-from-bracket"></i> Mở Cổng
+                                </button>
+                            </div>
+
+                            <!-- EXIT GATE -->
+                            <div class="m-gate-card">
+                                <div class="m-gate-left">
+                                    <div class="m-gate-icon">
+                                        <i class="fa-solid fa-door-closed"></i>
+                                    </div>
+                                    <div class="m-gate-info">
+                                        <div class="m-gate-name">Cổng Ra (Exit)</div>
+                                        <div class="m-gate-status closed" id="m-gate-exit-status">
+                                            <i class="fa-solid fa-lock"></i> ĐANG ĐÓNG
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="m-btn-gate m-btn-gate-primary" id="m-btn-open-exit" onclick="handleMobileGateAction('EXIT')">
+                                    <i class="fa-solid fa-arrow-up-from-bracket"></i> Mở Cổng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QUICK SENSORS & ENVIRONMENT -->
+                    <div class="m-section-header">
+                        <span class="m-section-title">Môi Trường Nhà Xe</span>
+                        <span class="m-section-badge">DHT11 • MQ-7</span>
+                    </div>
+                    <div class="m-sensor-grid">
+                        <div class="m-sensor-card">
+                            <i class="fa-solid fa-temperature-half m-sensor-icon temp"></i>
+                            <div class="m-sensor-val" id="m-sensor-temp-val">--</div>
+                            <div class="m-sensor-name">Nhiệt độ</div>
+                        </div>
+                        <div class="m-sensor-card">
+                            <i class="fa-solid fa-droplet m-sensor-icon hum"></i>
+                            <div class="m-sensor-val" id="m-sensor-hum-val">--</div>
+                            <div class="m-sensor-name">Độ ẩm</div>
+                        </div>
+                        <div class="m-sensor-card">
+                            <i class="fa-solid fa-wind m-sensor-icon gas"></i>
+                            <div class="m-sensor-val" id="m-sensor-gas-val">--</div>
+                            <div class="m-sensor-name">Khí CO MQ-7</div>
+                            <span class="m-sensor-badge normal" id="m-sensor-gas-badge">NORMAL</span>
+                        </div>
+                    </div>
+
+                    <!-- LAST RFID SCAN -->
+                    <div class="m-section-header">
+                        <span class="m-section-title">Quẹt Thẻ Gần Nhất</span>
+                        <span class="m-section-badge">RC522 SPI</span>
+                    </div>
+                    <div class="m-rfid-card">
+                        <div>
+                            <div style="font-size:11px; color:#8e8e93; font-weight:600;">CỔNG VÀO (ENTRY)</div>
+                            <div class="m-rfid-code" id="m-rfid-entry-val">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px; color:#8e8e93; font-weight:600; text-align:right;">CỔNG RA (EXIT)</div>
+                            <div class="m-rfid-code" id="m-rfid-exit-val" style="text-align:right;">--</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ==================== TAB 2: PARKING ==================== -->
+                <div id="m-tab-parking" class="m-tab-panel">
+                    <div class="m-section-header">
+                        <span class="m-section-title">Sơ Đồ 4 Vị Trí Đỗ Xe</span>
+                        <span class="m-section-badge">Cảm Biến IR LM393</span>
+                    </div>
+                    
+                    <div class="m-slots-grid">
+                        <!-- SLOT P1 -->
+                        <div class="m-slot-card available" id="m-slot-p1">
+                            <div class="m-slot-top">
+                                <span class="m-slot-name">P1</span>
+                                <span class="m-slot-badge available">AVAILABLE</span>
+                            </div>
+                            <div class="m-slot-center">
+                                <div class="m-slot-icon-box"><i class="fa-solid fa-car-side"></i></div>
+                                <div class="m-slot-desc">
+                                    <span class="m-slot-title">Chỗ trống</span>
+                                    <span class="m-slot-sub">Sẵn sàng đỗ xe</span>
+                                </div>
+                            </div>
+                            <div class="m-slot-details" style="display:none;">
+                                <div class="m-slot-detail-row"><span>Biển số:</span> <span class="m-slot-detail-val m-slot-plate-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thẻ RFID:</span> <span class="m-slot-detail-val m-slot-rfid-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thời gian:</span> <span class="m-slot-detail-val m-slot-dur-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Phí tạm tính:</span> <span class="m-slot-detail-fee m-slot-fee-val">--</span></div>
+                            </div>
+                        </div>
+
+                        <!-- SLOT P2 -->
+                        <div class="m-slot-card available" id="m-slot-p2">
+                            <div class="m-slot-top">
+                                <span class="m-slot-name">P2</span>
+                                <span class="m-slot-badge available">AVAILABLE</span>
+                            </div>
+                            <div class="m-slot-center">
+                                <div class="m-slot-icon-box"><i class="fa-solid fa-car-side"></i></div>
+                                <div class="m-slot-desc">
+                                    <span class="m-slot-title">Chỗ trống</span>
+                                    <span class="m-slot-sub">Sẵn sàng đỗ xe</span>
+                                </div>
+                            </div>
+                            <div class="m-slot-details" style="display:none;">
+                                <div class="m-slot-detail-row"><span>Biển số:</span> <span class="m-slot-detail-val m-slot-plate-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thẻ RFID:</span> <span class="m-slot-detail-val m-slot-rfid-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thời gian:</span> <span class="m-slot-detail-val m-slot-dur-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Phí tạm tính:</span> <span class="m-slot-detail-fee m-slot-fee-val">--</span></div>
+                            </div>
+                        </div>
+
+                        <!-- SLOT P3 -->
+                        <div class="m-slot-card available" id="m-slot-p3">
+                            <div class="m-slot-top">
+                                <span class="m-slot-name">P3</span>
+                                <span class="m-slot-badge available">AVAILABLE</span>
+                            </div>
+                            <div class="m-slot-center">
+                                <div class="m-slot-icon-box"><i class="fa-solid fa-car-side"></i></div>
+                                <div class="m-slot-desc">
+                                    <span class="m-slot-title">Chỗ trống</span>
+                                    <span class="m-slot-sub">Sẵn sàng đỗ xe</span>
+                                </div>
+                            </div>
+                            <div class="m-slot-details" style="display:none;">
+                                <div class="m-slot-detail-row"><span>Biển số:</span> <span class="m-slot-detail-val m-slot-plate-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thẻ RFID:</span> <span class="m-slot-detail-val m-slot-rfid-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thời gian:</span> <span class="m-slot-detail-val m-slot-dur-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Phí tạm tính:</span> <span class="m-slot-detail-fee m-slot-fee-val">--</span></div>
+                            </div>
+                        </div>
+
+                        <!-- SLOT P4 -->
+                        <div class="m-slot-card available" id="m-slot-p4">
+                            <div class="m-slot-top">
+                                <span class="m-slot-name">P4</span>
+                                <span class="m-slot-badge available">AVAILABLE</span>
+                            </div>
+                            <div class="m-slot-center">
+                                <div class="m-slot-icon-box"><i class="fa-solid fa-car-side"></i></div>
+                                <div class="m-slot-desc">
+                                    <span class="m-slot-title">Chỗ trống</span>
+                                    <span class="m-slot-sub">Sẵn sàng đỗ xe</span>
+                                </div>
+                            </div>
+                            <div class="m-slot-details" style="display:none;">
+                                <div class="m-slot-detail-row"><span>Biển số:</span> <span class="m-slot-detail-val m-slot-plate-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thẻ RFID:</span> <span class="m-slot-detail-val m-slot-rfid-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Thời gian:</span> <span class="m-slot-detail-val m-slot-dur-val">--</span></div>
+                                <div class="m-slot-detail-row"><span>Phí tạm tính:</span> <span class="m-slot-detail-fee m-slot-fee-val">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 3: SESSIONS ==================== -->
+                <div id="m-tab-session" class="m-tab-panel">
+                    <div class="m-pill-tabs">
+                        <button class="m-pill-btn active" data-filter="all" onclick="filterMobileSessions('all')">Tất cả</button>
+                        <button class="m-pill-btn" data-filter="parked" onclick="filterMobileSessions('parked')">Đang đỗ</button>
+                        <button class="m-pill-btn" data-filter="checkout" onclick="filterMobileSessions('checkout')">Đã rời bãi</button>
+                    </div>
+
+                    <div id="m-sessions-list">
+                        <!-- Render dynamically from real DB -->
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 4: PAYMENT ==================== -->
+                <div id="m-tab-payment" class="m-tab-panel">
+                    <!-- PRICING BANNER -->
+                    <div class="m-pricing-banner">
+                        <div class="m-pricing-title">Biểu Phí Gửi Xe Demo</div>
+                        <div class="m-pricing-rate">5.000 VNĐ / 5 Giây</div>
+                        <div class="m-pricing-sub">Đồng bộ chính xác với Firmware ESP32 & Backend REST API</div>
+                    </div>
+
+                    <!-- REVENUE SUMMARY -->
+                    <div class="m-hero-metrics">
+                        <div class="m-metric-box">
+                            <div class="m-metric-val" id="m-pay-total-rev" style="color:#0071e3; font-size:18px;">-- đ</div>
+                            <div class="m-metric-label">Tổng thu</div>
+                        </div>
+                        <div class="m-metric-box">
+                            <div class="m-metric-val total" id="m-pay-total-count" style="font-size:18px;">--</div>
+                            <div class="m-metric-label">Giao dịch</div>
+                        </div>
+                        <div class="m-metric-box">
+                            <div class="m-metric-val" style="color:#34c759; font-size:18px;">100%</div>
+                            <div class="m-metric-label">Đã thanh toán</div>
+                        </div>
+                    </div>
+
+                    <div class="m-section-header">
+                        <span class="m-section-title">Lịch Sử Thu Phí</span>
+                        <button class="m-btn-retry" style="background:#e5e5ea; color:#1c1c1e;" onclick="loadMobilePayments()">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+
+                    <div id="m-payments-list">
+                        <!-- Render dynamically from payments API -->
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 5: SYSTEM ==================== -->
+                <div id="m-tab-system" class="m-tab-panel">
+                    
+                    <!-- CAMERAS REAL MONITOR -->
+                    <div class="m-section-header">
+                        <span class="m-section-title">Giám Sát Camera ANPR</span>
+                        <span class="m-section-badge">2x ESP32-CAM</span>
+                    </div>
+
+                    <!-- ENTRY CAM -->
+                    <div class="m-cam-card">
+                        <div class="m-cam-header">
+                            <span><i class="fa-solid fa-video"></i> Camera Cổng Vào (Entry)</span>
+                            <span id="m-cam-entry-status">OFFLINE</span>
+                        </div>
+                        <div class="m-cam-frame" id="m-cam-entry-frame">
+                            <div class="m-cam-offline-box">
+                                <i class="fa-solid fa-video-slash" style="font-size:22px;"></i>
+                                <span>Chưa có tín hiệu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXIT CAM -->
+                    <div class="m-cam-card">
+                        <div class="m-cam-header">
+                            <span><i class="fa-solid fa-video"></i> Camera Cổng Ra (Exit)</span>
+                            <span id="m-cam-exit-status">OFFLINE</span>
+                        </div>
+                        <div class="m-cam-frame" id="m-cam-exit-frame">
+                            <div class="m-cam-offline-box">
+                                <i class="fa-solid fa-video-slash" style="font-size:22px;"></i>
+                                <span>Chưa có tín hiệu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SYSTEM HEALTH MATRIX -->
+                    <div class="m-section-header">
+                        <span class="m-section-title">Trạng Thái Toàn Hệ Thống</span>
+                        <span class="m-section-badge">Heartbeat 3s</span>
+                    </div>
+
+                    <div class="m-sys-list">
+                        <!-- ESP32 -->
+                        <div class="m-sys-row" id="m-sys-esp32">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-microchip"></i></div>
+                                <div>
+                                    <div class="m-sys-title">ESP32 DevKit V1</div>
+                                    <div class="m-sys-sub">Chưa có tín hiệu</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge unknown">OFFLINE</span>
+                        </div>
+
+                        <!-- BACKEND -->
+                        <div class="m-sys-row" id="m-sys-backend">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-server"></i></div>
+                                <div>
+                                    <div class="m-sys-title">Flask Backend Server</div>
+                                    <div class="m-sys-sub">REST API Port 5000</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge available">ONLINE</span>
+                        </div>
+
+                        <!-- DATABASE -->
+                        <div class="m-sys-row" id="m-sys-database">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-database"></i></div>
+                                <div>
+                                    <div class="m-sys-title">SQLite Database</div>
+                                    <div class="m-sys-sub">parking.db</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge available">ONLINE</span>
+                        </div>
+
+                        <!-- ENTRY CAM -->
+                        <div class="m-sys-row" id="m-sys-cam-entry">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-camera"></i></div>
+                                <div>
+                                    <div class="m-sys-title">Camera Cổng Vào</div>
+                                    <div class="m-sys-sub">192.168.0.101</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge unknown">OFFLINE</span>
+                        </div>
+
+                        <!-- EXIT CAM -->
+                        <div class="m-sys-row" id="m-sys-cam-exit">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-camera"></i></div>
+                                <div>
+                                    <div class="m-sys-title">Camera Cổng Ra</div>
+                                    <div class="m-sys-sub">192.168.0.106</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge unknown">OFFLINE</span>
+                        </div>
+
+                        <!-- MQ-7 -->
+                        <div class="m-sys-row" id="m-sys-mq7">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-smog"></i></div>
+                                <div>
+                                    <div class="m-sys-title">Cảm Biến Khí MQ-7</div>
+                                    <div class="m-sys-sub">-- ADC</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge unknown">OFFLINE</span>
+                        </div>
+
+                        <!-- RFID -->
+                        <div class="m-sys-row" id="m-sys-rfid">
+                            <div class="m-sys-left">
+                                <div class="m-sys-icon"><i class="fa-solid fa-id-card"></i></div>
+                                <div>
+                                    <div class="m-sys-title">Đầu Đọc Thẻ RC522</div>
+                                    <div class="m-sys-sub">2x Module SPI</div>
+                                </div>
+                            </div>
+                            <span class="m-slot-badge unknown">OFFLINE</span>
+                        </div>
+                    </div>
+
+                    <!-- CONNECTION SETTINGS BUTTON -->
+                    <button class="btn-apple-secondary btn-block" style="margin-top: 10px;" onclick="openApiConfigModal()">
+                        <i class="fa-solid fa-gear"></i> Cấu Hình Địa Chỉ Backend API
+                    </button>
+
+                </div>
+
+            </main>
+
+            <!-- ==================== BOTTOM TABBAR ==================== -->
+            <nav class="m-tabbar">
+                <a href="#m-home" class="m-tab-item active" data-tab="home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#m-parking" class="m-tab-item" data-tab="parking">
+                    <i class="fa-solid fa-square-parking"></i>
+                    <span>Parking</span>
+                </a>
+                <a href="#m-session" class="m-tab-item" data-tab="session">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Session</span>
+                </a>
+                <a href="#m-payment" class="m-tab-item" data-tab="payment">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Payment</span>
+                </a>
+                <a href="#m-system" class="m-tab-item" data-tab="system">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>System</span>
+                </a>
+            </nav>
+
+        </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 4. MODALS & TOASTS (SHARED ACROSS MOBILE & DESKTOP)                  -->
+    <!-- ==================================================================== -->
+
+    <!-- CONFIRM ACTION MODAL (APPLE ACTION SHEET) -->
+    <div id="m-confirm-modal" class="m-modal-backdrop">
+        <div class="m-modal-sheet">
+            <div class="m-modal-pill"></div>
+            <div class="m-modal-title" id="m-confirm-title">Xác nhận thao tác</div>
+            <div class="m-modal-desc" id="m-confirm-desc">Bạn có chắc chắn muốn thực hiện thao tác này không?</div>
+            <div class="m-modal-actions">
+                <button class="m-btn-modal-confirm" onclick="handleConfirmSubmit()">Xác nhận</button>
+                <button class="m-btn-modal-cancel" onclick="closeConfirmDialog()">Hủy bỏ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API CONFIG MODAL (FOR NETLIFY DEPLOYMENT) -->
+    <div id="m-api-config-modal" class="m-modal-backdrop">
+        <div class="m-modal-sheet">
+            <div class="m-modal-pill"></div>
+            <div class="m-modal-title"><i class="fa-solid fa-network-wired"></i> Cấu Hình Backend API</div>
+            <div class="m-modal-desc">
+                Nhập địa chỉ Backend Server (Ví dụ: <code>http://192.168.0.103:5000</code> hoặc domain public ngrok/tunnel). Để trống nếu chạy cùng máy tính.
+            </div>
+            <div style="margin-bottom: 14px;">
+                <input type="url" id="m-api-url-input" placeholder="http://192.168.0.103:5000" style="width:100%; padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,0.15); font-size:14px;">
+                <div id="m-api-test-result" style="font-size:12px; margin-top:6px; min-height:18px;"></div>
+            </div>
+            <div class="m-modal-actions">
+                <button type="button" class="btn-apple-secondary btn-block" onclick="testApiConnection()" style="margin-bottom:4px;">
+                    <i class="fa-solid fa-plug"></i> Kiểm tra kết nối (Ping)
+                </button>
+                <button class="m-btn-modal-confirm" onclick="saveApiConfig()">Lưu cấu hình</button>
+                <button class="m-btn-modal-cancel" onclick="closeApiConfigModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div id="m-toast-container" class="m-toast-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/app.js"></script>
+    <script src="js/mobile.js"></script>
+</body>
+</html>
